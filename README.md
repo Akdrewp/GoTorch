@@ -116,8 +116,6 @@ GoTorch is evolving into a full-scale deep learning engine! Here is what's on th
   - 🏎️ **cuBLAS & cuDNN Integration**: Hardware-accelerated tensor operations on NVIDIA Tensor Cores.
   - 🔀 **Multi-threaded Work Dispatch**: Concurrent CPU/GPU queue scheduling and multi-threaded kernel submission.
 - **🧩 Neural Network Expansions**:
-  - Activation layers (`ReLU`, `GELU`, `Sigmoid`, `Tanh`).
-  - Loss functions (`MSELoss`, `CrossEntropyLoss`).
   - Convolutional layers (`Conv2d`, `MaxPool2d`).
 - **📦 Data Pipelines**:
   - Batch dataset loaders, streaming readers, and multithreaded data prefetching.
