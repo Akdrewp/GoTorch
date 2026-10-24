@@ -1,6 +1,6 @@
 from GoTorch.autograd.autograd_engine import AutogradEngine as AutogradEngine
 from GoTorch.autograd.operations import Add as Add, LeakyReLU as LeakyReLU, MatMul as MatMul, ReLU as ReLU, Sigmoid as Sigmoid, Sub as Sub, Tanh as Tanh, Transpose as Transpose
-from GoTorch.backend.native_backend import NDArray as NDArray
+from GoTorch.backend.native_backend import Device as Device, NDArray as NDArray
 from _typeshed import Incomplete
 
 class Tensor:
@@ -29,6 +29,18 @@ class Tensor:
     @property
     def shape(self) -> tuple[int, ...]:
         """Returns the shape dimensions of the underlying NDArray."""
+    @property
+    def device(self) -> Device:
+        """Returns the hardware execution device of the underlying NDArray."""
+    def to(self, device: Device) -> Tensor:
+        """Transfers the tensor to the target hardware device.
+
+        Args:
+            device: Target Device enum (e.g. Device.CPU or Device.GPU).
+
+        Returns:
+            A new Tensor node residing on the target device.
+        """
     def backward(self, out_grad: Tensor | None = None) -> None:
         """Performs backward pass on tensor via post-order traversal.
 

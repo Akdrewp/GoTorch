@@ -9,6 +9,11 @@ PYBIND11_MODULE(native_backend, m) {
     m.doc() = "GoTorch native C++ backend";
     m.attr("__backend_type__") = "cpp";
 
+    py::enum_<gotorch::Device>(m, "Device")
+        .value("CPU", gotorch::Device::CPU)
+        .value("GPU", gotorch::Device::GPU)
+        .export_values();
+
     py::class_<NDArray>(m, "NDArray")
         .def(py::init<>())
         .def(py::init([](const std::vector<float>& data,
@@ -21,6 +26,8 @@ PYBIND11_MODULE(native_backend, m) {
         py::arg("shape"),
         py::arg("strides") = std::vector<size_t>{},
         py::arg("offset") = 0)
+        .def_property_readonly("device", &NDArray::device)
+        .def("to", &NDArray::to, py::arg("device"))
         .def_property_readonly("shape", [](const NDArray& self) {
             py::tuple t(self.shape.size());
             for (size_t i = 0; i < self.shape.size(); ++i) {
@@ -39,10 +46,26 @@ PYBIND11_MODULE(native_backend, m) {
             return self.offset;
         })
         .def_property_readonly("data", [](const NDArray& self) {
-            if (!self.storage) {
+            if (!self.storage || self.size() == 0 || !self.data()) {
                 return std::vector<float>{};
             }
-            return self.storage->data;
+            if (self.device() == gotorch::Device::GPU) {
+                throw std::runtime_error(
+                    "Direct access to GPU memory unavailable. Call .to(Device.CPU) first."
+                );
+            }
+            if (self.is_contiguous()) {
+                const float* ptr = self.data();
+                return std::vector<float>(ptr, ptr + self.size());
+            }
+            std::vector<float> result;
+            result.reserve(self.size());
+            std::vector<size_t> coord(self.shape.size(), 0);
+            for (size_t i = 0; i < self.size(); ++i) {
+                result.push_back(self(coord));
+                gotorch::shape_utils::advance_coordinate(coord, self.shape);
+            }
+            return result;
         })
         .def("add", &NDArray::add, py::arg("addend"))
         .def("__add__", [](const NDArray& self, py::object other) -> py::object {

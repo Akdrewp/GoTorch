@@ -1,5 +1,11 @@
 #include "gotorch/kernels.hpp"
 
+#include <stdexcept>
+#include <type_traits>
+
+#include "gotorch/device.hpp"
+#include "gotorch/gpu_kernels.hpp"
+
 template <typename T>
 ndarray<T> ndarray<T>::add(const ndarray<T>& addend) const {
     return gotorch::kernels::add(*this, addend);
@@ -12,6 +18,20 @@ ndarray<T> ndarray<T>::sub(const ndarray<T>& subtrahend) const {
 
 template <typename T>
 ndarray<T> ndarray<T>::matmul(const ndarray<T>& other) const {
+    if (this->device() != other.device()) {
+        throw std::invalid_argument(
+            "Device mismatch in matmul: left operand is on " +
+            gotorch::device_to_string(this->device()) + " but right operand is on " +
+            gotorch::device_to_string(other.device())
+        );
+    }
+    if (this->device() == gotorch::Device::GPU) {
+        if constexpr (std::is_same_v<T, float>) {
+            return gotorch::gpu::matmul(*this, other);
+        } else {
+            throw std::runtime_error("GPU matmul is currently only implemented for float");
+        }
+    }
     return gotorch::kernels::matmul(*this, other);
 }
 

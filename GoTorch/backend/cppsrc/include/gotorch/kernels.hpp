@@ -35,14 +35,14 @@ ndarray<T> for_each_unary(const ndarray<T>& in, UnaryOp op) {
     std::vector<T> out_vec(total_elements);
 
     if (in.is_contiguous()) {
-        const T* src = in.storage->data.data() + in.offset;
+        const T* src = in.data();
         for (size_t i = 0; i < total_elements; ++i) {
             out_vec[i] = op(src[i]);
         }
     } else {
         size_t rank = in.shape.size();
         std::vector<size_t> coord(rank, 0);
-        const T* src = in.storage->data.data() + in.offset;
+        const T* src = in.data();
         for (size_t i = 0; i < total_elements; ++i) {
             size_t off = shape_utils::compute_coordinate_offset(coord, in.strides);
             out_vec[i] = op(src[off]);
@@ -81,8 +81,8 @@ ndarray<T> for_each_binary(const ndarray<T>& a, const ndarray<T>& b, BinaryOp op
     size_t total_elements = shape_utils::num_elements(out_shape);
     std::vector<T> out_vec(total_elements);
 
-    const T* data_a = a.storage->data.data() + a.offset;
-    const T* data_b = b.storage->data.data() + b.offset;
+    const T* data_a = a.data();
+    const T* data_b = b.data();
 
     std::vector<size_t> coord(max_ndim, 0);
     for (size_t i = 0; i < total_elements; ++i) {
@@ -125,16 +125,16 @@ ndarray<T> for_each_backward(
     std::vector<T> out_vec(total_elements);
 
     if (in.is_contiguous() && grad_output.is_contiguous()) {
-        const T* src = in.storage->data.data() + in.offset;
-        const T* grad = grad_output.storage->data.data() + grad_output.offset;
+        const T* src = in.data();
+        const T* grad = grad_output.data();
         for (size_t i = 0; i < total_elements; ++i) {
             out_vec[i] = op(src[i], grad[i]);
         }
     } else {
         size_t rank = in.shape.size();
         std::vector<size_t> coord(rank, 0);
-        const T* src = in.storage->data.data() + in.offset;
-        const T* grad = grad_output.storage->data.data() + grad_output.offset;
+        const T* src = in.data();
+        const T* grad = grad_output.data();
         for (size_t i = 0; i < total_elements; ++i) {
             size_t off_src = shape_utils::compute_coordinate_offset(coord, in.strides);
             size_t off_grad = shape_utils::compute_coordinate_offset(coord, grad_output.strides);
@@ -190,7 +190,7 @@ ndarray<T> reduce_along_axis(
         shape_utils::map_reduced_coordinate(in_coord, axis, keepdim, out_coord);
         size_t out_offset = shape_utils::compute_coordinate_offset(out_coord, out_strides);
         size_t in_offset = in.index_to_offset(in_coord);
-        out_data[out_offset] = op(out_data[out_offset], in.storage->data[in_offset]);
+        out_data[out_offset] = op(out_data[out_offset], in.storage->data()[in_offset]);
         shape_utils::advance_coordinate(in_coord, in.shape);
     }
 
@@ -214,13 +214,13 @@ T reduce_all(const ndarray<T>& in, ReduceOp op, T init_val) {
     T total = init_val;
     if (in.is_contiguous()) {
         for (size_t i = 0; i < in.size(); ++i) {
-            total = op(total, in.storage->data[in.offset + i]);
+            total = op(total, in.data()[i]);
         }
     } else {
         std::vector<size_t> in_coord(in.shape.size(), 0);
         size_t total_in = in.size();
         for (size_t step = 0; step < total_in; ++step) {
-            total = op(total, in.storage->data[in.index_to_offset(in_coord)]);
+            total = op(total, in.storage->data()[in.index_to_offset(in_coord)]);
             shape_utils::advance_coordinate(in_coord, in.shape);
         }
     }

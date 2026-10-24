@@ -11,7 +11,7 @@ from GoTorch.autograd.operations import (
     Tanh,
     Transpose,
 )
-from GoTorch.backend.native_backend import NDArray
+from GoTorch.backend.native_backend import Device, NDArray
 
 
 # The Autograd Graph Node (Frontend / Python User API)
@@ -49,6 +49,22 @@ class Tensor:
     def shape(self) -> tuple[int, ...]:
         """Returns the shape dimensions of the underlying NDArray."""
         return self.data.shape
+
+    @property
+    def device(self) -> Device:
+        """Returns the hardware execution device of the underlying NDArray."""
+        return self.data.device
+
+    def to(self, device: Device) -> Tensor:
+        """Transfers the tensor to the target hardware device.
+
+        Args:
+            device: Target Device enum (e.g. Device.CPU or Device.GPU).
+
+        Returns:
+            A new Tensor node residing on the target device.
+        """
+        return Tensor(data=self.data.to(device), op=self.op, inputs=self.inputs)
 
     def backward(self, out_grad: Tensor | None = None) -> None:
         """Performs backward pass on tensor via post-order traversal.

@@ -1,8 +1,54 @@
 import collections.abc
 import typing
-from typing import overload
+from typing import ClassVar, overload
 
+CPU: Device
+GPU: Device
 __backend_type__: str
+
+class Device:
+    """Members:
+
+      CPU
+
+      GPU"""
+    __members__: ClassVar[dict] = ...  # read-only
+    CPU: ClassVar[Device] = ...
+    GPU: ClassVar[Device] = ...
+    __entries: ClassVar[dict] = ...
+    def __init__(self, value: typing.SupportsInt | typing.SupportsIndex) -> None:
+        """__init__(self: GoTorch.backend.native_backend.Device, value: typing.SupportsInt | typing.SupportsIndex) -> None"""
+    def __eq__(self, other: object) -> bool:
+        """__eq__(*args, **kwargs)
+        Overloaded function.
+
+        1. __eq__(self: GoTorch.backend.native_backend.Device, other: GoTorch.backend.native_backend.Device, /) -> bool
+
+        2. __eq__(self: GoTorch.backend.native_backend.Device, other: object, /) -> bool
+        """
+    def __hash__(self) -> int:
+        """__hash__(self: object, /) -> int"""
+    def __index__(self) -> int:
+        """__index__(self: GoTorch.backend.native_backend.Device, /) -> int"""
+    def __int__(self) -> int:
+        """__int__(self: GoTorch.backend.native_backend.Device, /) -> int"""
+    def __ne__(self, other: object) -> bool:
+        """__ne__(*args, **kwargs)
+        Overloaded function.
+
+        1. __ne__(self: GoTorch.backend.native_backend.Device, other: GoTorch.backend.native_backend.Device, /) -> bool
+
+        2. __ne__(self: GoTorch.backend.native_backend.Device, other: object, /) -> bool
+        """
+    @property
+    def name(self) -> str:
+        """name(self: object, /) -> str
+
+        name(self: object, /) -> str
+        """
+    @property
+    def value(self) -> int:
+        """(arg0: GoTorch.backend.native_backend.Device) -> int"""
 
 class NDArray:
     @overload
@@ -32,9 +78,9 @@ class NDArray:
     def add(self, addend: NDArray) -> NDArray:
         """add(self: GoTorch.backend.native_backend.NDArray, addend: GoTorch.backend.native_backend.NDArray) -> GoTorch.backend.native_backend.NDArray"""
     def bce_loss_backward(self, target: NDArray, grad_output: NDArray = ..., reduction: str = ...) -> NDArray:
-        """bce_loss_backward(self: GoTorch.backend.native_backend.NDArray, target: GoTorch.backend.native_backend.NDArray, grad_output: GoTorch.backend.native_backend.NDArray = <GoTorch.backend.native_backend.NDArray object at 0x7b6dbcde1f30>, reduction: str = 'mean') -> GoTorch.backend.native_backend.NDArray"""
+        """bce_loss_backward(self: GoTorch.backend.native_backend.NDArray, target: GoTorch.backend.native_backend.NDArray, grad_output: GoTorch.backend.native_backend.NDArray = <GoTorch.backend.native_backend.NDArray object at 0x7169e3c4b870>, reduction: str = 'mean') -> GoTorch.backend.native_backend.NDArray"""
     def bce_with_logits_loss_backward(self, target: NDArray, grad_output: NDArray = ..., reduction: str = ...) -> NDArray:
-        """bce_with_logits_loss_backward(self: GoTorch.backend.native_backend.NDArray, target: GoTorch.backend.native_backend.NDArray, grad_output: GoTorch.backend.native_backend.NDArray = <GoTorch.backend.native_backend.NDArray object at 0x7b6dbcde3ef0>, reduction: str = 'mean') -> GoTorch.backend.native_backend.NDArray"""
+        """bce_with_logits_loss_backward(self: GoTorch.backend.native_backend.NDArray, target: GoTorch.backend.native_backend.NDArray, grad_output: GoTorch.backend.native_backend.NDArray = <GoTorch.backend.native_backend.NDArray object at 0x7169e3cad6b0>, reduction: str = 'mean') -> GoTorch.backend.native_backend.NDArray"""
     def isEmpty(self) -> bool:
         """isEmpty(self: GoTorch.backend.native_backend.NDArray) -> bool"""
     def is_contiguous(self) -> bool:
@@ -48,7 +94,7 @@ class NDArray:
     def mse_loss(self, target: NDArray, reduction: str = ...) -> NDArray:
         """mse_loss(self: GoTorch.backend.native_backend.NDArray, target: GoTorch.backend.native_backend.NDArray, reduction: str = 'mean') -> GoTorch.backend.native_backend.NDArray"""
     def mse_loss_backward(self, target: NDArray, grad_output: NDArray = ..., reduction: str = ...) -> NDArray:
-        """mse_loss_backward(self: GoTorch.backend.native_backend.NDArray, target: GoTorch.backend.native_backend.NDArray, grad_output: GoTorch.backend.native_backend.NDArray = <GoTorch.backend.native_backend.NDArray object at 0x7b6dbcde1e30>, reduction: str = 'mean') -> GoTorch.backend.native_backend.NDArray"""
+        """mse_loss_backward(self: GoTorch.backend.native_backend.NDArray, target: GoTorch.backend.native_backend.NDArray, grad_output: GoTorch.backend.native_backend.NDArray = <GoTorch.backend.native_backend.NDArray object at 0x7169e3c4a5b0>, reduction: str = 'mean') -> GoTorch.backend.native_backend.NDArray"""
     def ones_like(self) -> NDArray:
         """ones_like(self: GoTorch.backend.native_backend.NDArray) -> GoTorch.backend.native_backend.NDArray"""
     def relu(self) -> NDArray:
@@ -69,6 +115,8 @@ class NDArray:
         """tanh(self: GoTorch.backend.native_backend.NDArray) -> GoTorch.backend.native_backend.NDArray"""
     def tanh_backward(self, grad_output: NDArray) -> NDArray:
         """tanh_backward(self: GoTorch.backend.native_backend.NDArray, grad_output: GoTorch.backend.native_backend.NDArray) -> GoTorch.backend.native_backend.NDArray"""
+    def to(self, device: Device) -> NDArray:
+        """to(self: GoTorch.backend.native_backend.NDArray, device: GoTorch.backend.native_backend.Device) -> GoTorch.backend.native_backend.NDArray"""
     def transpose(self, dim0: typing.SupportsInt | typing.SupportsIndex = ..., dim1: typing.SupportsInt | typing.SupportsIndex = ...) -> NDArray:
         """transpose(self: GoTorch.backend.native_backend.NDArray, dim0: typing.SupportsInt | typing.SupportsIndex = 0, dim1: typing.SupportsInt | typing.SupportsIndex = 1) -> GoTorch.backend.native_backend.NDArray"""
     def zeros_like(self) -> NDArray:
@@ -88,6 +136,9 @@ class NDArray:
     @property
     def data(self) -> list[float]:
         """(arg0: GoTorch.backend.native_backend.NDArray) -> list[float]"""
+    @property
+    def device(self) -> Device:
+        """(arg0: GoTorch.backend.native_backend.NDArray) -> GoTorch.backend.native_backend.Device"""
     @property
     def offset(self) -> int:
         """(arg0: GoTorch.backend.native_backend.NDArray) -> int"""

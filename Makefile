@@ -24,7 +24,20 @@ LDFLAGS := -pthread
 CPP_SRCS := $(CPP_SRC_DIR)/src/shape_utils.cpp \
             $(CPP_SRC_DIR)/src/ndarray.cpp \
             $(CPP_SRC_DIR)/src/kernels.cpp \
+            $(CPP_SRC_DIR)/src/cpu_allocator.cpp \
             $(CPP_SRC_DIR)/nn/loss.cpp
+
+# ROCm / HIP compiler flags
+HIPCC ?= hipcc
+HIPFLAGS ?= -std=c++17 -O3 -fPIC --offload-arch=gfx1201 $(INCLUDES)
+ROCM_PATH ?= /opt/rocm-7.2.4
+HIP_LDFLAGS ?= -L$(ROCM_PATH)/lib -Wl,-rpath,$(ROCM_PATH)/lib -lamdhip64
+
+HIP_SRCS := $(CPP_SRC_DIR)/src/gpu_allocator.hip \
+            $(CPP_SRC_DIR)/src/gpu_kernels.hip
+
+HIP_OBJS := $(BUILD_DIR)/gpu_allocator.hip.o \
+            $(BUILD_DIR)/gpu_kernels.hip.o
 
 BACKEND_SO := $(ROOT_DIR)/GoTorch/backend/native_backend$(EXT_SUFFIX)
 
@@ -32,12 +45,17 @@ BACKEND_SO := $(ROOT_DIR)/GoTorch/backend/native_backend$(EXT_SUFFIX)
 
 all: build
 
+$(BUILD_DIR)/%.hip.o: $(CPP_SRC_DIR)/src/%.hip
+	@mkdir -p $(BUILD_DIR)
+	@echo "==> Compiling HIP source $<..."
+	@$(HIPCC) $(HIPFLAGS) -c $< -o $@
+
 # 1. Build the Python C++ native extension
 build: $(BACKEND_SO)
 
-$(BACKEND_SO): $(CPP_SRCS) $(CPP_SRC_DIR)/bindings.cpp
+$(BACKEND_SO): $(CPP_SRCS) $(HIP_OBJS) $(CPP_SRC_DIR)/bindings.cpp
 	@echo "==> Compiling GoTorch native_backend extension..."
-	@$(CXX) $(CXXFLAGS) -shared $(PY_INCLUDES) $(INCLUDES) $^ -o $@
+	@$(CXX) $(CXXFLAGS) -shared $(PY_INCLUDES) $(INCLUDES) $^ $(HIP_LDFLAGS) -o $@
 	@echo "Built $@"
 
 # 2. Setup GoogleTest dependency
@@ -54,14 +72,16 @@ $(GTEST_DIR)/libgtest.a:
 gtest: $(GTEST_DIR)/libgtest.a
 
 # 3. Build C++ test executable
-$(BIN_DIR)/test_ndarray: $(GTEST_DIR)/libgtest.a $(CPP_SRCS) $(TEST_SRC_DIR)/test_ndarray.cpp
+$(BIN_DIR)/test_ndarray: $(GTEST_DIR)/libgtest.a $(CPP_SRCS) $(HIP_OBJS) $(TEST_SRC_DIR)/test_ndarray.cpp
 	@mkdir -p $(BIN_DIR)
 	@echo "==> Compiling test_ndarray..."
 	@$(CXX) $(CXXFLAGS) $(INCLUDES) \
 		$(CPP_SRCS) \
+		$(HIP_OBJS) \
 		$(TEST_SRC_DIR)/test_ndarray.cpp \
 		$(GTEST_DIR)/libgtest.a \
 		$(LDFLAGS) \
+		$(HIP_LDFLAGS) \
 		-o $(BIN_DIR)/test_ndarray
 
 # 4. Run all C++ tests (or specific tests via TEST=... or FILTER=...)

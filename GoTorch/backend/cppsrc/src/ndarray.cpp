@@ -11,7 +11,7 @@ void ndarray<T>::CreateDeepCopy(const ndarray& other) {
     shape = other.shape;
     strides = other.strides;
     offset = other.offset;
-    storage = std::make_shared<Storage<T>>(other.storage->data);
+    storage = std::make_shared<Storage<T>>(*other.storage);
 }
 
 template <typename T>
@@ -79,14 +79,60 @@ ndarray<T> ndarray<T>::reshape(const std::vector<size_t>& new_shape) const {
 }
 
 template <typename T>
+ndarray<T> ndarray<T>::to(Device target_device) const {
+    if (device() == target_device) {
+        return *this;
+    }
+    Allocator* target_alloc = (target_device == Device::GPU)
+        ? gotorch::get_gpu_allocator()
+        : gotorch::get_cpu_allocator();
+
+    size_t total_elems = size();
+    auto new_storage = std::make_shared<Storage<T>>(total_elems, target_alloc);
+
+    if (is_contiguous()) {
+        gotorch::copy_memory(
+            new_storage->data(),
+            target_device,
+            data(),
+            device(),
+            total_elems * sizeof(T)
+        );
+        return ndarray<T>(new_storage, shape, strides, 0);
+    }
+
+    if (device() == Device::CPU) {
+        std::vector<T> host_buf(total_elems);
+        std::vector<size_t> coord(shape.size(), 0);
+        for (size_t i = 0; i < total_elems; ++i) {
+            host_buf[i] = (*this)(coord);
+            gotorch::shape_utils::advance_coordinate(coord, shape);
+        }
+        gotorch::copy_memory(
+            new_storage->data(),
+            target_device,
+            host_buf.data(),
+            Device::CPU,
+            total_elems * sizeof(T)
+        );
+    } else {
+        ndarray<T> cpu_copy = this->to(Device::CPU);
+        return cpu_copy.to(target_device);
+    }
+    return ndarray<T>(new_storage, shape, default_strides(shape), 0);
+}
+
+template <typename T>
 ndarray<T> ndarray<T>::unbroadcast(const std::vector<size_t>& target_shape) const {
     return gotorch::shape_utils::unbroadcast(*this, target_shape);
 }
 
 // Explicit template instantiations
-template struct Storage<float>;
-template struct Storage<double>;
-template struct Storage<int>;
+namespace gotorch {
+template class Storage<float>;
+template class Storage<double>;
+template class Storage<int>;
+}  // namespace gotorch
 
 template class ndarray<float>;
 template class ndarray<double>;

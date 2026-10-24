@@ -1078,3 +1078,119 @@ TEST_F(ndarray_mse_loss_backward, ShouldHandleNonContiguousTransposedInputs) {
     EXPECT_FLOAT_EQ(grad[2], 1.0f);
     EXPECT_FLOAT_EQ(grad[3], -1.0f);
 }
+
+// ============================================================================
+// Device & Memory Transfer Tests
+// ============================================================================
+
+class ndarray_device : public ::testing::Test {
+protected:
+    void SetUp() override {}
+    void TearDown() override {}
+};
+
+TEST_F(ndarray_device, ShouldDefaultToCPUDevice) {
+    NDArray a;
+    EXPECT_EQ(a.device(), Device::CPU);
+
+    NDArray b(std::vector<float>{1.0f, 2.0f}, {2});
+    EXPECT_EQ(b.device(), Device::CPU);
+}
+
+TEST_F(ndarray_device, ShouldTransferToGPUAndBackToCPUWithDataPreservation) {
+    std::vector<float> original = {1.5f, -2.5f, 3.25f, 4.0f, 0.0f, -10.125f};
+    NDArray cpu_arr(original, {2, 3});
+    EXPECT_EQ(cpu_arr.device(), Device::CPU);
+
+    NDArray gpu_arr = cpu_arr.to(Device::GPU);
+    EXPECT_EQ(gpu_arr.device(), Device::GPU);
+    EXPECT_EQ(gpu_arr.shape, (std::vector<size_t>{2, 3}));
+
+    NDArray back_to_cpu = gpu_arr.to(Device::CPU);
+    EXPECT_EQ(back_to_cpu.device(), Device::CPU);
+    EXPECT_EQ(back_to_cpu.shape, (std::vector<size_t>{2, 3}));
+    for (size_t i = 0; i < original.size(); ++i) {
+        EXPECT_FLOAT_EQ(back_to_cpu[i], original[i]);
+    }
+}
+
+TEST_F(ndarray_device, ShouldPreserveNonContiguousDataAcrossGPUTransfer) {
+    NDArray a({1.0f, 2.0f, 3.0f, 4.0f, 5.0f, 6.0f}, {2, 3});
+    NDArray a_t = a.transpose(0, 1);
+    EXPECT_FALSE(a_t.is_contiguous());
+
+    NDArray a_gpu = a_t.to(Device::GPU);
+    EXPECT_EQ(a_gpu.device(), Device::GPU);
+    EXPECT_EQ(a_gpu.shape, (std::vector<size_t>{3, 2}));
+
+    NDArray a_back = a_gpu.to(Device::CPU);
+    EXPECT_EQ(a_back.device(), Device::CPU);
+    EXPECT_EQ(a_back.shape, (std::vector<size_t>{3, 2}));
+
+    std::vector<float> expected = {1.0f, 4.0f, 2.0f, 5.0f, 3.0f, 6.0f};
+    for (size_t i = 0; i < expected.size(); ++i) {
+        EXPECT_FLOAT_EQ(a_back[i], expected[i]);
+    }
+}
+
+TEST_F(ndarray_device, ShouldThrowOnMatMulDeviceMismatch) {
+    NDArray a_cpu({1.0f, 2.0f, 3.0f, 4.0f}, {2, 2});
+    NDArray b_gpu = a_cpu.to(Device::GPU);
+
+    EXPECT_THROW(a_cpu.matmul(b_gpu), std::invalid_argument);
+    EXPECT_THROW(b_gpu.matmul(a_cpu), std::invalid_argument);
+}
+
+// ============================================================================
+// GPU MatMul Parity Tests
+// ============================================================================
+
+class ndarray_gpu_matmul : public ::testing::Test {
+protected:
+    void SetUp() override {}
+    void TearDown() override {}
+};
+
+TEST_F(ndarray_gpu_matmul, ShouldMatchCPUMatmulResults) {
+    std::vector<float> a_data = {1.0f, 2.0f, 3.0f, 4.0f};
+    std::vector<float> b_data = {5.0f, 6.0f, 7.0f, 8.0f};
+
+    NDArray a_cpu(a_data, {2, 2});
+    NDArray b_cpu(b_data, {2, 2});
+    NDArray c_cpu = a_cpu.matmul(b_cpu);
+
+    NDArray a_gpu = a_cpu.to(Device::GPU);
+    NDArray b_gpu = b_cpu.to(Device::GPU);
+    NDArray c_gpu = a_gpu.matmul(b_gpu);
+
+    EXPECT_EQ(c_gpu.device(), Device::GPU);
+    NDArray c_back = c_gpu.to(Device::CPU);
+    EXPECT_EQ(c_back.shape, c_cpu.shape);
+    for (size_t i = 0; i < c_cpu.size(); ++i) {
+        EXPECT_FLOAT_EQ(c_back[i], c_cpu[i]);
+    }
+}
+
+TEST_F(ndarray_gpu_matmul, ShouldHandleNonMultipleOfBlockSizeDimensions) {
+    size_t M = 17, K = 19, N = 23;
+    std::vector<float> a_data(M * K);
+    for (size_t i = 0; i < M * K; ++i) {
+        a_data[i] = static_cast<float>((i % 7) - 3);
+    }
+    std::vector<float> b_data(K * N);
+    for (size_t i = 0; i < K * N; ++i) {
+        b_data[i] = static_cast<float>((i % 5) - 2);
+    }
+
+    NDArray a_cpu(a_data, {M, K});
+    NDArray b_cpu(b_data, {K, N});
+    NDArray c_cpu = a_cpu.matmul(b_cpu);
+
+    NDArray c_gpu = a_cpu.to(Device::GPU).matmul(b_cpu.to(Device::GPU));
+    NDArray c_back = c_gpu.to(Device::CPU);
+
+    EXPECT_EQ(c_back.shape, (std::vector<size_t>{M, N}));
+    for (size_t i = 0; i < c_cpu.size(); ++i) {
+        EXPECT_FLOAT_EQ(c_back[i], c_cpu[i]);
+    }
+}

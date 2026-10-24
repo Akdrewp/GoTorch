@@ -6,18 +6,14 @@
 #include <utility>
 #include <vector>
 
+#include "gotorch/allocator.hpp"
+#include "gotorch/device.hpp"
 #include "gotorch/shape_utils.hpp"
+#include "gotorch/storage.hpp"
 
-template <typename T = float>
-struct Storage {
-    std::vector<T> data;
-
-    Storage() = default;
-    explicit Storage(size_t size) : data(size) {}
-    Storage(size_t size, const T& init_val) : data(size, init_val) {}
-    explicit Storage(std::vector<T> vec) : data(std::move(vec)) {}
-    Storage(const T* ptr, size_t size) : data(ptr, ptr + size) {}
-};
+using gotorch::Allocator;
+using gotorch::Device;
+using gotorch::Storage;
 
 template <typename T = float>
 class ndarray {
@@ -162,50 +158,66 @@ public:
     }
 
     /**
+     * @brief Device on which this ndarray buffer resides.
+     */
+    Device device() const noexcept {
+        return storage ? storage->device() : Device::CPU;
+    }
+
+    /**
+     * @brief Creates a copy of this ndarray on the target device.
+     */
+    ndarray to(Device target_device) const;
+
+    /**
      * @brief Returns an array of ones with identical shape and standard strides.
      */
     ndarray ones_like() const {
-        return ndarray(std::vector<T>(size(), static_cast<T>(1)), shape);
+        Allocator* alloc = (device() == Device::GPU) ? gotorch::get_gpu_allocator() : gotorch::get_cpu_allocator();
+        auto new_storage = std::make_shared<Storage<T>>(size(), static_cast<T>(1), alloc);
+        return ndarray(new_storage, shape, default_strides(shape), 0);
     }
 
     /**
      * @brief Returns an array of zeros with identical shape and standard strides.
      */
     ndarray zeros_like() const {
-        return ndarray(std::vector<T>(size(), static_cast<T>(0)), shape);
+        Allocator* alloc = (device() == Device::GPU) ? gotorch::get_gpu_allocator() : gotorch::get_cpu_allocator();
+        auto new_storage = std::make_shared<Storage<T>>(size(), static_cast<T>(0), alloc);
+        return ndarray(new_storage, shape, default_strides(shape), 0);
     }
 
     /**
      * @brief Direct pointer access to underlying buffer (at offset).
      */
     T* data() {
-        return storage ? storage->data.data() + offset : nullptr;
+        return storage ? storage->data() + offset : nullptr;
     }
 
     const T* data() const {
-        return storage ? storage->data.data() + offset : nullptr;
+        return storage ? storage->data() + offset : nullptr;
     }
 
     /**
      * @brief Access element via multidimensional indices.
      */
     const T& operator()(const std::vector<size_t>& indices) const {
-        return storage->data[index_to_offset(indices)];
+        return storage->data()[index_to_offset(indices)];
     }
 
     T& operator()(const std::vector<size_t>& indices) {
-        return storage->data[index_to_offset(indices)];
+        return storage->data()[index_to_offset(indices)];
     }
 
     /**
      * @brief Access element via 1D buffer index.
      */
     const T& operator[](size_t idx) const {
-        return storage->data[offset + idx];
+        return storage->data()[offset + idx];
     }
 
     T& operator[](size_t idx) {
-        return storage->data[offset + idx];
+        return storage->data()[offset + idx];
     }
 
     // Mathematical Operations (defined in kernels.cpp)

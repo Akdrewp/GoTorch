@@ -41,7 +41,7 @@ public:
      */
     void deallocate(void* ptr) override {
         if (ptr) {
-            hipFree(ptr);
+            (void)hipFree(ptr);
         }
     }
 
