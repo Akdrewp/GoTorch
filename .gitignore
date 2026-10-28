@@ -8,4 +8,4 @@ build/
 tests/RECENT_CHANGES.md
 RECENT_CHANGES.md
 profile_output/
-
+.rocprofv3/

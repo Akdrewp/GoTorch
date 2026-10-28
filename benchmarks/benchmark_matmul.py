@@ -7,7 +7,7 @@ import random
 import torch
 from GoTorch.backend.native_backend import NDArray
 
-from bencmark.utils import benchmark_op, print_comparison_table
+from benchmarks.utils import benchmark_op, print_comparison_table
 from GoTorch import Device
 
 

@@ -18,7 +18,7 @@ def profile_gpu_gemm(size: int = 1024, warmup: int = 5, iterations: int = 20) ->
         warmup: Number of warmup kernel dispatches before measurement.
         iterations: Number of profiled kernel dispatches.
     """
-    print(f"Preparing {size}x{size} matrices for GoTorch GPU GEMM...")
+    print(f"Preparing {size}x{size} matrices for GoTorch GPU GEMM...", flush=True)
     raw_a = [random.uniform(-1.0, 1.0) for _ in range(size * size)]
     raw_b = [random.uniform(-1.0, 1.0) for _ in range(size * size)]
 
@@ -26,11 +26,11 @@ def profile_gpu_gemm(size: int = 1024, warmup: int = 5, iterations: int = 20) ->
     a_gpu = NDArray(raw_a, shape=(size, size)).to(Device.GPU)
     b_gpu = NDArray(raw_b, shape=(size, size)).to(Device.GPU)
 
-    print(f"Executing {warmup} warmup iterations...")
+    print(f"Executing {warmup} warmup iterations...", flush=True)
     for _ in range(warmup):
         _ = a_gpu.matmul(b_gpu)
 
-    print(f"Executing {iterations} profiled GEMM iterations...")
+    print(f"Executing {iterations} profiled GEMM iterations...", flush=True)
     out_gpu = None
     for _ in range(iterations):
         out_gpu = a_gpu.matmul(b_gpu)
@@ -39,7 +39,7 @@ def profile_gpu_gemm(size: int = 1024, warmup: int = 5, iterations: int = 20) ->
     if out_gpu is not None:
         _ = out_gpu.to(Device.CPU)
 
-    print("GPU GEMM completed successfully.")
+    print("GPU GEMM completed successfully.", flush=True)
 
 
 def main() -> None:
