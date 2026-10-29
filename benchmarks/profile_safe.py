@@ -82,6 +82,29 @@ def main() -> None:
 
     cmd = sys.argv[1:]
 
+    # Redirect any root live_counters destination to benchmarks/live_counters
+    rewritten_cmd = []
+    i = 0
+    while i < len(cmd):
+        arg = cmd[i]
+        if arg in ("-d", "--output-directory") and i + 1 < len(cmd):
+            target_dir = cmd[i + 1]
+            if target_dir in ("live_counters", "./live_counters"):
+                rewritten_cmd.extend([arg, "benchmarks/live_counters"])
+                print("[profile_safe] Redirected counter output to 'benchmarks/live_counters'")
+                i += 2
+                continue
+        elif arg.startswith("-d=") or arg.startswith("--output-directory="):
+            flag, val = arg.split("=", 1)
+            if val in ("live_counters", "./live_counters"):
+                rewritten_cmd.append(f"{flag}=benchmarks/live_counters")
+                print("[profile_safe] Redirected counter output to 'benchmarks/live_counters'")
+                i += 1
+                continue
+        rewritten_cmd.append(arg)
+        i += 1
+    cmd = rewritten_cmd
+
     def handle_signal(sig: int, frame: object) -> None:
         print(f"\n[!] Caught signal {sig}. Ensuring GPU is reset to 'auto' before exiting...")
         set_dpm_level("auto")

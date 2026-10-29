@@ -22,6 +22,7 @@ GoTorch implements multiple matrix multiplication (GEMM) algorithms to demonstra
 ```
 benchmarks/
 ├── benchmark_matmul.py       # Multi-kernel speed & throughput (GFLOPS) benchmark
+├── plot_benchmark.py          # Visualization script plotting latency & TFLOPS scaling graphs
 ├── profile_matmul.py         # Dedicated GoTorch GPU kernel dispatch driver for profilers
 ├── profile_pytorch_matmul.py # PyTorch ROCm GEMM profiler exporting Perfetto/Chrome JSON traces
 ├── profile_safe.py           # Safe GPU harness managing AMD DPM power states during profiling
@@ -44,17 +45,35 @@ PYTHONPATH=. ./.venv/bin/python benchmarks/benchmark_matmul.py
 
 ### Custom Matrix Sizes
 ```bash
-PYTHONPATH=. ./.venv/bin/python benchmarks/benchmark_matmul.py --sizes 256 512 1024 2048
-```
-
-### Including CPU Benchmarks
-```bash
-PYTHONPATH=. ./.venv/bin/python benchmarks/benchmark_matmul.py --with-cpu
+PYTHONPATH=. ./.venv/bin/python benchmarks/benchmark_matmul.py --sizes 256 512 1024 2048 4096 8192
 ```
 
 ---
 
-## 2. Hardware Performance Profiling (`rocprofv3`)
+## 2. Generating Comparative Benchmark Graphs
+
+[plot_benchmark.py](plot_benchmark.py) generates a two-panel, publication-quality performance comparison graph (Latency on log-log scale and Compute Throughput in TFLOPS):
+
+### Plotting Directly from a Live Benchmark Run
+```bash
+PYTHONPATH=. ./.venv/bin/python benchmarks/plot_benchmark.py --sizes 256 512 1024 2048 4096 8192
+```
+
+### Plotting from Piped Benchmark Output
+```bash
+PYTHONPATH=. ./.venv/bin/python benchmarks/benchmark_matmul.py --sizes 256 512 1024 2048 4096 8192 | \
+  ./.venv/bin/python benchmarks/plot_benchmark.py
+```
+
+### Plotting from a Saved Benchmark Log File
+```bash
+./.venv/bin/python benchmarks/plot_benchmark.py --from-log benchmarks/profile_output/benchmark_run.txt
+```
+The output graph is saved as a 300-DPI image at `benchmarks/profile_output/matmul_benchmark_comparison.png`.
+
+---
+
+## 3. Hardware Performance Profiling (`rocprofv3`)
 
 AMD RDNA GPUs enable aggressive dynamic power clock gating (`power_dpm_force_performance_level == auto`), which gates off hardware event counters during execution. 
 

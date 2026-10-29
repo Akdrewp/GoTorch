@@ -22,10 +22,6 @@ def find_latest_counter_csv(search_dir: str = "benchmarks/live_counters") -> str
     """
     pattern = os.path.join(search_dir, "**", "*_counter_collection.csv")
     files = glob.glob(pattern, recursive=True)
-    if not files and search_dir != "live_counters":
-        files = glob.glob(os.path.join("live_counters", "**", "*_counter_collection.csv"), recursive=True)
-    if not files:
-        files = glob.glob("**/*_counter_collection.csv", recursive=True)
     if not files:
         return None
     files.sort(key=os.path.getmtime, reverse=True)
