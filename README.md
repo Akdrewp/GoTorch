@@ -86,7 +86,7 @@ optimizer.step()
 ## 🧪 Testing & Build Instructions
 
 ### Prerequisites
-- Linux OS with `g++` (C++17 or later) and `make`
+- Linux OS with `g++` (C++17 or later), `hipcc` (ROCm 6.0+ for GPU backend), and `make`
 - Python 3.10+ with `pytest` and `torch` (for verification)
 
 ### Build the C++ Extension
@@ -106,15 +106,25 @@ PYTHONPATH=. pytest -v tests/
 
 ---
 
+## 📊 Benchmarks
+
+![GPU GEMM Benchmark](assets/matmul_benchmark.png)
+
+- **GoTorch** scales smoothly as matrix sizes grow, reaching 10.4 TFLOPS at 8192×8192.
+- **PyTorch** performs well on small-to-medium matrices but hits a steep performance drop at 8192×8192 (~1.2 TFLOPS) due to a missing tuned kernel in ROCm.
+- **Kernel optimizations** (memory reuse and vectorized reads) deliver a 17× speedup over the basic GPU baseline.
+- Benchmark scripts and instructions are available in [benchmarks/](benchmarks/).
+
+---
+
 ## 🗺️ Roadmap & Future Vision
 
 GoTorch is evolving into a full-scale deep learning engine! Here is what's on the horizon:
 
 - **⚡ GPU Concurrency & Parallel Programming**:
-  - 🧵 **CUDA Kernels**: Native CUDA kernels for vector addition, reductions, and fast GEMM matrix multiplication.
-  - 🌊 **Asynchronous Stream Management**: Overlapping host-to-device (H2D) data transfers with kernel execution via CUDA streams.
-  - 🏎️ **cuBLAS & cuDNN Integration**: Hardware-accelerated tensor operations on NVIDIA Tensor Cores.
-  - 🔀 **Multi-threaded Work Dispatch**: Concurrent CPU/GPU queue scheduling and multi-threaded kernel submission.
+  - 🌊 **Asynchronous Stream Management**: Overlapping data transfers with kernel execution.
+  - 🏎️ **cuBLAS / rocBLAS & Tensor Cores**: Hardware-accelerated tensor operations.
+  - 🔀 **Multi-threaded Work Dispatch**: Concurrent CPU/GPU queue scheduling.
 - **🧩 Neural Network Expansions**:
   - Activation layers (`ReLU`, `GELU`, `Sigmoid`, `Tanh`).
   - Loss functions (`MSELoss`, `CrossEntropyLoss`).
