@@ -4,7 +4,6 @@
 from __future__ import annotations
 
 import glob
-import os
 import signal
 import subprocess
 import sys
@@ -76,7 +75,7 @@ def main() -> None:
         print(
             "sudo PYTHONPATH=. python3 benchmarks/profile_safe.py /opt/rocm/bin/rocprofv3 "
             "--pmc SQ_WAVES SQ_INSTS_VALU SQ_INSTS_VMEM SQ_INST_CYCLES_VALU SQ_INST_CYCLES_VMEM "
-            "TCP_REQ TCP_REQ_MISS GL2C_HIT GL2C_MISS -f csv -d ./live_counters -- "
+            "TCP_REQ TCP_REQ_MISS GL2C_HIT GL2C_MISS -f csv -d ./benchmarks/live_counters -- "
             "./.venv/bin/python benchmarks/profile_matmul.py --size 1024 --iterations 3"
         )
         sys.exit(1)

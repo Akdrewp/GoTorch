@@ -13,7 +13,7 @@ def profile_pytorch_gpu_gemm(
     size: int = 1024,
     warmup: int = 5,
     iterations: int = 20,
-    output_path: str = "profile_output/pytorch_gemm_trace.json",
+    output_path: str = "benchmarks/profile_output/pytorch_gemm_trace.json",
 ) -> None:
     """Profiles PyTorch GPU GEMM on AMD ROCm and exports a Perfetto trace.
 
@@ -85,8 +85,8 @@ def main() -> None:
     parser.add_argument(
         "--output",
         type=str,
-        default="profile_output/pytorch_gemm_trace.json",
-        help="Path for exported trace (default: profile_output/pytorch_gemm_trace.json)",
+        default="benchmarks/profile_output/pytorch_gemm_trace.json",
+        help="Path for exported trace (default: benchmarks/profile_output/pytorch_gemm_trace.json)",
     )
     args = parser.parse_args()
 

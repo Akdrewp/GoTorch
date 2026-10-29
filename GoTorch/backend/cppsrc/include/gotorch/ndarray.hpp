@@ -232,6 +232,10 @@ public:
     }
 
     ndarray matmul(const ndarray& other) const;
+    ndarray matmul_naive(const ndarray& other) const;
+    ndarray matmul_tiled(const ndarray& other) const;
+    ndarray matmul_coalesced(const ndarray& other) const;
+    ndarray matmul_coalesced_coarsened(const ndarray& other) const;
     ndarray relu() const;
     ndarray relu_backward(const ndarray& grad_output) const;
     ndarray tanh() const;

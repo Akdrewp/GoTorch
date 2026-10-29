@@ -36,6 +36,82 @@ ndarray<T> ndarray<T>::matmul(const ndarray<T>& other) const {
 }
 
 template <typename T>
+ndarray<T> ndarray<T>::matmul_naive(const ndarray<T>& other) const {
+    if (this->device() != other.device()) {
+        throw std::invalid_argument(
+            "Device mismatch in matmul_naive: left operand is on " +
+            gotorch::device_to_string(this->device()) + " but right operand is on " +
+            gotorch::device_to_string(other.device())
+        );
+    }
+    if (this->device() == gotorch::Device::GPU) {
+        if constexpr (std::is_same_v<T, float>) {
+            return gotorch::gpu::matmul_naive(*this, other);
+        } else {
+            throw std::runtime_error("GPU matmul_naive is currently only implemented for float");
+        }
+    }
+    return gotorch::kernels::matmul(*this, other);
+}
+
+template <typename T>
+ndarray<T> ndarray<T>::matmul_tiled(const ndarray<T>& other) const {
+    if (this->device() != other.device()) {
+        throw std::invalid_argument(
+            "Device mismatch in matmul_tiled: left operand is on " +
+            gotorch::device_to_string(this->device()) + " but right operand is on " +
+            gotorch::device_to_string(other.device())
+        );
+    }
+    if (this->device() == gotorch::Device::GPU) {
+        if constexpr (std::is_same_v<T, float>) {
+            return gotorch::gpu::matmul_tiled(*this, other);
+        } else {
+            throw std::runtime_error("GPU matmul_tiled is currently only implemented for float");
+        }
+    }
+    return gotorch::kernels::matmul(*this, other);
+}
+
+template <typename T>
+ndarray<T> ndarray<T>::matmul_coalesced(const ndarray<T>& other) const {
+    if (this->device() != other.device()) {
+        throw std::invalid_argument(
+            "Device mismatch in matmul_coalesced: left operand is on " +
+            gotorch::device_to_string(this->device()) + " but right operand is on " +
+            gotorch::device_to_string(other.device())
+        );
+    }
+    if (this->device() == gotorch::Device::GPU) {
+        if constexpr (std::is_same_v<T, float>) {
+            return gotorch::gpu::matmul_coalesced(*this, other);
+        } else {
+            throw std::runtime_error("GPU matmul_coalesced is currently only implemented for float");
+        }
+    }
+    return gotorch::kernels::matmul(*this, other);
+}
+
+template <typename T>
+ndarray<T> ndarray<T>::matmul_coalesced_coarsened(const ndarray<T>& other) const {
+    if (this->device() != other.device()) {
+        throw std::invalid_argument(
+            "Device mismatch in matmul_coalesced_coarsened: left operand is on " +
+            gotorch::device_to_string(this->device()) + " but right operand is on " +
+            gotorch::device_to_string(other.device())
+        );
+    }
+    if (this->device() == gotorch::Device::GPU) {
+        if constexpr (std::is_same_v<T, float>) {
+            return gotorch::gpu::matmul_coalesced_coarsened(*this, other);
+        } else {
+            throw std::runtime_error("GPU matmul_coalesced_coarsened is currently only implemented for float");
+        }
+    }
+    return gotorch::kernels::matmul(*this, other);
+}
+
+template <typename T>
 ndarray<T> ndarray<T>::relu() const {
     return gotorch::kernels::relu(*this);
 }

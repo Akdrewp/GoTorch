@@ -8,4 +8,7 @@ build/
 tests/RECENT_CHANGES.md
 RECENT_CHANGES.md
 profile_output/
+live_counters/
+benchmarks/profile_output/
+benchmarks/live_counters/
 .rocprofv3/

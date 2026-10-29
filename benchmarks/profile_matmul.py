@@ -10,15 +10,21 @@ from GoTorch.backend.native_backend import NDArray
 from GoTorch import Device
 
 
-def profile_gpu_gemm(size: int = 1024, warmup: int = 5, iterations: int = 20) -> None:
+def profile_gpu_gemm(
+    size: int = 1024,
+    warmup: int = 5,
+    iterations: int = 20,
+    kernel: str = "coarsened",
+) -> None:
     """Allocates tensors on GPU and executes matrix multiplication dispatches.
 
     Args:
         size: Dimension N of the square matrix (N x N).
         warmup: Number of warmup kernel dispatches before measurement.
         iterations: Number of profiled kernel dispatches.
+        kernel: GEMM kernel to execute ('naive', 'tiled', 'coalesced', or 'coarsened').
     """
-    print(f"Preparing {size}x{size} matrices for GoTorch GPU GEMM...", flush=True)
+    print(f"Preparing {size}x{size} matrices for GoTorch GPU GEMM ({kernel})...", flush=True)
     raw_a = [random.uniform(-1.0, 1.0) for _ in range(size * size)]
     raw_b = [random.uniform(-1.0, 1.0) for _ in range(size * size)]
 
@@ -26,14 +32,25 @@ def profile_gpu_gemm(size: int = 1024, warmup: int = 5, iterations: int = 20) ->
     a_gpu = NDArray(raw_a, shape=(size, size)).to(Device.GPU)
     b_gpu = NDArray(raw_b, shape=(size, size)).to(Device.GPU)
 
+    if kernel == "naive":
+        gemm_fn = a_gpu.matmul_naive
+    elif kernel == "tiled":
+        gemm_fn = a_gpu.matmul_tiled
+    elif kernel == "coalesced":
+        gemm_fn = a_gpu.matmul_coalesced
+    elif kernel == "coarsened":
+        gemm_fn = a_gpu.matmul_coalesced_coarsened
+    else:
+        gemm_fn = a_gpu.matmul
+
     print(f"Executing {warmup} warmup iterations...", flush=True)
     for _ in range(warmup):
-        _ = a_gpu.matmul(b_gpu)
+        _ = gemm_fn(b_gpu)
 
     print(f"Executing {iterations} profiled GEMM iterations...", flush=True)
     out_gpu = None
     for _ in range(iterations):
-        out_gpu = a_gpu.matmul(b_gpu)
+        out_gpu = gemm_fn(b_gpu)
 
     # Sync result back to host to ensure all queued kernels finalize
     if out_gpu is not None:
@@ -65,9 +82,21 @@ def main() -> None:
         default=20,
         help="Number of iterations to profile (default: 20)",
     )
+    parser.add_argument(
+        "--kernel",
+        type=str,
+        choices=["naive", "tiled", "coalesced", "coarsened"],
+        default="coarsened",
+        help="GEMM kernel variant to profile (default: coarsened)",
+    )
 
     args = parser.parse_args()
-    profile_gpu_gemm(size=args.size, warmup=args.warmup, iterations=args.iterations)
+    profile_gpu_gemm(
+        size=args.size,
+        warmup=args.warmup,
+        iterations=args.iterations,
+        kernel=args.kernel,
+    )
 
 
 if __name__ == "__main__":

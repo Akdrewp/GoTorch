@@ -11,7 +11,7 @@ import sys
 import pandas as pd
 
 
-def find_latest_counter_csv(search_dir: str = "live_counters") -> str | None:
+def find_latest_counter_csv(search_dir: str = "benchmarks/live_counters") -> str | None:
     """Finds the most recently modified counter collection CSV file.
 
     Args:
@@ -22,6 +22,8 @@ def find_latest_counter_csv(search_dir: str = "live_counters") -> str | None:
     """
     pattern = os.path.join(search_dir, "**", "*_counter_collection.csv")
     files = glob.glob(pattern, recursive=True)
+    if not files and search_dir != "live_counters":
+        files = glob.glob(os.path.join("live_counters", "**", "*_counter_collection.csv"), recursive=True)
     if not files:
         files = glob.glob("**/*_counter_collection.csv", recursive=True)
     if not files:
@@ -111,12 +113,12 @@ def main() -> None:
         "csv_file",
         nargs="?",
         default=None,
-        help="Path to *_counter_collection.csv (defaults to latest found in live_counters/)",
+        help="Path to *_counter_collection.csv (defaults to latest found in benchmarks/live_counters/)",
     )
     parser.add_argument(
         "--dir",
-        default="live_counters",
-        help="Directory to search for counter CSVs (default: live_counters)",
+        default="benchmarks/live_counters",
+        help="Directory to search for counter CSVs (default: benchmarks/live_counters)",
     )
     args = parser.parse_args()
 
